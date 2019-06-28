@@ -59,7 +59,7 @@ client.on('message', message => {
 						db.prepare('UPDATE profile SET available = false, stranger_id = ? WHERE user_id = ?').run(stranger, user.id)
 						db.prepare('UPDATE profile SET available = false, stranger_id = ? WHERE user_id = ?').run(user.id, stranger)
 						message.channel.send('Matched with a stranger, have a nice chat!')
-						client.users.get(stranger).send('Matched with stranger!')
+						client.users.get(stranger).send('Matched with a stranger!')
 						return
 					}
 				}
