@@ -30,7 +30,7 @@ client.on('message', message => {
 				check = db.prepare('SELECT user_id FROM profile WHERE user_id = ?').get(user.id)
 				if(check)
 					return
-				db.prepare('INSERT INTO profile (user_id, user_name, user_desc) VALUES (?, ?, ?)').run(user.id, 'stranger', 'Just a random person.')
+				db.prepare('INSERT INTO profile (user_id, user_name, user_desc) VALUES (?, ?, ?)').run(user.id, user.username, 'Just a random person.')
 				message.channel.send('Registered!')
 				return
 				break
@@ -78,10 +78,16 @@ client.on('message', message => {
 			case 'leave':
 				check = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
 				if(check && check.stranger_id) {
-					db.prepare('UPDATE profile SET stranger_id = ? WHERE user_id = ?').run('', user.id)
+					db.prepare('UPDATE profile SET stranger_id = ? WHERE user_id IN (?, ?)').run('', user.id, check.stranger_id)
 					message.channel.send('Left conversation...')
 					client.users.get(check.stranger_id).send('Stranger has left the conversation...')
 				}
+				return
+				break
+			case 'strangers':
+				const row = db.prepare('SELECT COUNT(*) FROM profile WHERE available = true').get()
+				const i = row['COUNT(*)']
+				message.channel.send(`There ${i != 1 ? 'are' : 'is'} ${i} user${i != 1 ? 's' : ''} available now.`)
 				return
 				break
 			default:
