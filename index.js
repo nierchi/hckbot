@@ -19,6 +19,8 @@ client.on('ready', () => {
 
 client.on('message', message => {
 	const user = message.author
+	if(user.bot)
+		return
 	if(message.content.startsWith(config.prefix)) {
 		const command = message.content.split(' ')[0].substring(config.prefix.length)
 		console.log(command, ' received from ', user.username)
@@ -28,7 +30,7 @@ client.on('message', message => {
 				check = db.prepare('SELECT user_id FROM profile WHERE user_id = ?').get(user.id)
 				if(check)
 					return
-				db.prepare('INSERT INTO profile (user_id, user_name, user_desc) VALUES (?, ?, ?)').run(user.id, user.username, 'Just a random person.')
+				db.prepare('INSERT INTO profile (user_id, user_name, user_desc) VALUES (?, ?, ?)').run(user.id, 'stranger', 'Just a random person.')
 				message.channel.send('Registered!')
 				return
 				break
@@ -42,8 +44,8 @@ client.on('message', message => {
 				return
 				break
 			case 'available':
-				check = db.prepare('SELECT available FROM profile WHERE user_id = ?').get(user.id)
-				if(check && check.available)
+				check = db.prepare('SELECT available, stranger_id FROM profile WHERE user_id = ?').get(user.id)
+				if(check && (check.available || check.stranger_id))
 					return
 				check = db.prepare('SELECT user_id FROM profile WHERE available = true').all()
 				if(check) {
@@ -66,10 +68,20 @@ client.on('message', message => {
 				return
 				break
 			case 'unavailable':
+				check = db.prepare('SELECT available FROM profile WHERE user_id = ?').get(user.id)
+				if(check && check.available) {
+					db.prepare('UPDATE profile SET available = false WHERE user_id = ?').run(user.id)
+					message.channel.send('Availability turned off!')
+				}
 				return
 				break
 			case 'leave':
-
+				check = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
+				if(check && check.stranger_id) {
+					db.prepare('UPDATE profile SET stranger_id = ? WHERE user_id = ?').run('', user.id)
+					message.channel.send('Left conversation...')
+					client.users.get(check.stranger_id).send('Stranger has left the conversation...')
+				}
 				return
 				break
 			default:
@@ -77,7 +89,7 @@ client.on('message', message => {
 		}
 	}
 	let stranger = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
-	if(stranger && stranger.stranger_id)
+	if(message.channel.type === 'dm' && stranger && stranger.stranger_id)
 		client.users.get(stranger.stranger_id).send(message.content)
 })
 

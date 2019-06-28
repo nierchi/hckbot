@@ -23,7 +23,6 @@
     "discord.js": "^11.5.1",
     "erlpack": "github:hammerandchisel/erlpack",
     "node-opus": "^0.3.2",
-    "sodium": "^3.0.2",
-    "windows-build-tools": "^5.1.0"
+    "sodium": "^3.0.2"
   }
 }
