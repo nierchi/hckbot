@@ -38,14 +38,19 @@ client.on('message', message => {
 				check = db.prepare('SELECT user_id FROM profile WHERE user_id = ?').get(user.id)
 				if(!check)
 					return
-				db.prepare('DELETE FROM profile WHERE user_id = ?').get(user.id)
+				let stranger = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
+				if(stranger && stranger.stranger_id) {
+					db.prepare('UPDATE profile SET stranger_id = ? WHERE user_id = ?').run('', stranger.stranger_id)
+					client.users.get(stranger.stranger_id).send('Stranger left the conversation...')
+				}
+				db.prepare('DELETE FROM profile WHERE user_id = ?').run(user.id)
 				message.channel.send('Unregistered...')
 				delete registry[user.id]
 				return
 				break
 			case 'available':
 				check = db.prepare('SELECT available, stranger_id FROM profile WHERE user_id = ?').get(user.id)
-				if(check && (check.available || check.stranger_id))
+				if(!check || check.available || check.stranger_id)
 					return
 				check = db.prepare('SELECT user_id FROM profile WHERE available = true').all()
 				if(check) {
