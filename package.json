@@ -1,0 +1,14 @@
+{
+  "name": "Strange Bot",
+  "version": "1.0.0",
+  "description": "Chatting with Strangers",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^5.4.0",
+    "discord.js": "^11.5.1",
+    "node-pre-gyp": "^0.13.0",
+    "node-superfetch": "^0.1.9"
+  }
+}
