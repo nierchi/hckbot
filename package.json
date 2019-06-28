@@ -1,0 +1,29 @@
+{
+  "name": "discordhackweek",
+  "version": "1.0.0",
+  "description": "Discord hack week bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nierchi/hckbot.git"
+  },
+  "author": "dskilly",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nierchi/hckbot/issues"
+  },
+  "homepage": "https://github.com/nierchi/hckbot#readme",
+  "dependencies": {
+    "@discordjs/uws": "^11.149.1",
+    "better-sqlite3": "^5.4.0",
+    "bufferutil": "^4.0.1",
+    "discord.js": "^11.5.1",
+    "erlpack": "github:hammerandchisel/erlpack",
+    "node-opus": "^0.3.2",
+    "sodium": "^3.0.2",
+    "windows-build-tools": "^5.1.0"
+  }
+}
