@@ -1,2 +1,5 @@
-*.db*
+**/node_modules
+*.db
+*.db-shm
+*.db-wal
 config.json
