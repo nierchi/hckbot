@@ -49,27 +49,7 @@ client.on('message', message => {
 				return
 				break
 			case 'available':
-				check = db.prepare('SELECT available, stranger_id FROM profile WHERE user_id = ?').get(user.id)
-				if(!check || check.available || check.stranger_id)
-					return
-				check = db.prepare('SELECT user_id FROM profile WHERE available = true').all()
-				if(check) {
-					let stranger = ''
-					for(let i of check) {
-						const r = Math.floor(Math.random() * check.length)
-						stranger = check[r].user_id
-						let avail = db.prepare('SELECT available FROM profile WHERE user_id = ?').get(user.id)
-						if(!avail)
-							continue
-						db.prepare('UPDATE profile SET available = false, stranger_id = ? WHERE user_id = ?').run(stranger, user.id)
-						db.prepare('UPDATE profile SET available = false, stranger_id = ? WHERE user_id = ?').run(user.id, stranger)
-						message.channel.send('Matched with a stranger, have a nice chat!')
-						client.users.get(stranger).send('Matched with a stranger!')
-						return
-					}
-				}
-				db.prepare('UPDATE profile SET available = true WHERE user_id = ?').run(user.id)
-				message.channel.send('Availability turned on!')
+				doAvailable(message, user)
 				return
 				break
 			case 'unavailable':
@@ -81,18 +61,36 @@ client.on('message', message => {
 				return
 				break
 			case 'leave':
-				check = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
-				if(check && check.stranger_id) {
-					db.prepare('UPDATE profile SET stranger_id = ? WHERE user_id IN (?, ?)').run('', user.id, check.stranger_id)
-					message.channel.send('Left conversation...')
-					client.users.get(check.stranger_id).send('Stranger has left the conversation...')
-				}
+				doLeave(message, user)
 				return
 				break
 			case 'strangers':
 				const row = db.prepare('SELECT COUNT(*) FROM profile WHERE available = true').get()
 				const i = row['COUNT(*)']
 				message.channel.send(`There ${i != 1 ? 'are' : 'is'} ${i} user${i != 1 ? 's' : ''} available now.`)
+				return
+				break
+			case 'status':
+				const embed = {}
+				check = db.prepare('SELECT available FROM profile WHERE user_id = ?').get(user.id)
+				if(!check)
+					return
+				const avail = check.available
+				embed.color = avail ? 0x00ff00 : 0xff0000
+				embed.author = {}
+				embed.author.name = user.username
+				embed.author.icon_url = avail ? 'https://www.colorcombos.com/images/colors/hex/00FF00.png' : 'https://www.colorcombos.com/images/colors/hex/FF0000.png'
+				embed.title = 'Status: ' + (avail ? 'available' : 'unavailable')
+				message.channel.send('', {embed: embed})
+				return
+				break
+			case 'next':
+				check = db.prepare('SELECT available, stranger_id FROM profile WHERE user_id = ?').get(user.id)
+				if(!check)
+					return
+				if(check.stranger_id)
+					doLeave(message, user)
+				doAvailable(message, user)
 				return
 				break
 			default:
@@ -103,5 +101,39 @@ client.on('message', message => {
 	if(message.channel.type === 'dm' && stranger && stranger.stranger_id)
 		client.users.get(stranger.stranger_id).send(message.content)
 })
+
+function doLeave(message, user) {
+	let check = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
+	if(check && check.stranger_id) {
+		db.prepare('UPDATE profile SET stranger_id = ? WHERE user_id IN (?, ?)').run('', user.id, check.stranger_id)
+		message.channel.send('Left conversation...')
+		client.users.get(check.stranger_id).send('Stranger has left the conversation...')
+	}
+}
+
+function doAvailable(message, user) {
+	let check = db.prepare('SELECT available, stranger_id FROM profile WHERE user_id = ?').get(user.id)
+	if(!check || check.available || check.stranger_id)
+		return
+	check = db.prepare('SELECT user_id FROM profile WHERE available = true').all()
+	if(check) {
+		let stranger = ''
+		for(let i of check) {
+			const r = Math.floor(Math.random() * check.length)
+			stranger = check[r].user_id
+			let avail = db.prepare('SELECT available FROM profile WHERE user_id = ?').get(user.id)
+			if(!avail)
+				continue
+			db.prepare('UPDATE profile SET available = false, stranger_id = ? WHERE user_id = ?').run(stranger, user.id)
+			db.prepare('UPDATE profile SET available = false, stranger_id = ? WHERE user_id = ?').run(user.id, stranger)
+			message.channel.send('Matched with a stranger, have a nice chat!')
+			client.users.get(stranger).send('Matched with a stranger!')
+			return
+		}
+	}
+	db.prepare('UPDATE profile SET available = true WHERE user_id = ?').run(user.id)
+	message.channel.send('Availability turned on!')
+	return
+}
 
 client.login(config.token)
