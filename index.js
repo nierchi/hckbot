@@ -14,7 +14,7 @@ client.on('ready', () => {
 		db.pragma("synchronous = 1");
 		db.pragma("journal_mode = wal");
 	}
-	console.log('Running...')
+	console.log(client.user.username + ' running...')
 })
 
 client.on('message', message => {
@@ -29,7 +29,7 @@ client.on('message', message => {
 			case 'register':
 				check = db.prepare('SELECT user_id FROM profile WHERE user_id = ?').get(user.id)
 				if(check)
-					return
+					return message.channel.send(message.author + ', you are already registered!')
 				db.prepare('INSERT INTO profile (user_id, user_name, user_desc) VALUES (?, ?, ?)').run(user.id, user.username, 'Just a random person.')
 				message.channel.send('Registered!')
 				return
@@ -58,6 +58,8 @@ client.on('message', message => {
 					db.prepare('UPDATE profile SET available = false WHERE user_id = ?').run(user.id)
 					message.channel.send('Availability turned off!')
 				}
+				if(check && !check.available)
+					return message.channel.send(message.author + ', your status is already Unavailable!')
 				return
 				break
 			case 'leave':
@@ -72,7 +74,7 @@ client.on('message', message => {
 				break
 			case 'status':
 				const embed = {}
-				check = db.prepare('SELECT available FROM profile WHERE user_id = ?').get(user.id)
+				check = db.prepare('SELECT available, stranger_id FROM profile WHERE user_id = ?').get(user.id)
 				if(!check)
 					return
 				const avail = check.available
@@ -80,7 +82,7 @@ client.on('message', message => {
 				embed.author = {}
 				embed.author.name = user.username
 				embed.author.icon_url = avail ? 'https://www.colorcombos.com/images/colors/hex/00FF00.png' : 'https://www.colorcombos.com/images/colors/hex/FF0000.png'
-				embed.title = 'Status: ' + (avail ? 'available' : 'unavailable')
+				embed.description = 'Status: ' + (avail ? 'available' : 'unavailable') + ' and ' + (check.stranger_id ? 'currently matched with a stranger.' : 'not matched with any stranger.')
 				message.channel.send('', {embed: embed})
 				return
 				break
@@ -113,8 +115,12 @@ function doLeave(message, user) {
 
 function doAvailable(message, user) {
 	let check = db.prepare('SELECT available, stranger_id FROM profile WHERE user_id = ?').get(user.id)
-	if(!check || check.available || check.stranger_id)
+	if(!check)
 		return
+	if(check.available)
+		return message.channel.send(message.author + ', your status is already Available!')
+	if(check.stranger_id)
+		return message.channel.send(message.author + ', your status cannot be changed to available because you are currently matched with a stranger!')
 	check = db.prepare('SELECT user_id FROM profile WHERE available = true').all()
 	if(check) {
 		let stranger = ''
@@ -137,3 +143,19 @@ function doAvailable(message, user) {
 }
 
 client.login(config.token)
+
+if(process.platform === 'win32') {
+	let rl = require('readline').createInterface({
+		input: process.stdin,
+		output: process.stdout
+	})
+	rl.on('SIGINT', function() {
+		process.emit('SIGINT')
+	})
+}
+
+process.on('SIGINT', function() {
+	console.log(client.user.username + ' quitting...')
+	client.destroy()
+	process.exit()
+})
