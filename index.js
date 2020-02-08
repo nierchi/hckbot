@@ -17,6 +17,9 @@ client.on('ready', () => {
 		db.pragma("synchronous = 1");
 		db.pragma("journal_mode = wal");
 	}
+	db.prepare("CREATE TABLE IF NOT EXISTS blacklist (user_id TEXT NOT NULL PRIMARY KEY UNIQUE, reason TEXT NOT NULL, ts TEXT NOT NULL);").run()
+	db.prepare("CREATE TABLE IF NOT EXISTS reports (user_id TEXT NOT NULL, reason TEXT NOT NULL, ts TEXT NOT NULL, stranger_id TEXT NOT NULL);").run()
+	db.prepare("CREATE TABLE IF NOT EXISTS devs (user_id TEXT NOT NULL PRIMARY KEY UNIQUE)").run()
 	console.log(client.user.username + ' running...')
 })
 
@@ -29,7 +32,11 @@ client.on('message', message => {
 			command = split_msg.shift().substring(config.prefix.length),
 			args = split_msg
 		console.log(command, ' received from ', user.username, ' with args: ', args)
-		let check = false
+		let check = db.prepare('SELECT 1 FROM blacklist WHERE user_id = ?').get(user.id)
+		if(check)
+			return
+		else
+			check = false	
 		switch(command) {
 			case 'register':
 				check = db.prepare('SELECT user_id FROM profile WHERE user_id = ?').get(user.id)
@@ -131,6 +138,50 @@ client.on('message', message => {
 				message.channel.send(user + ', ' + uwording + ' unblocked!')
 				return
 				break
+			case 'report':
+				const reason = args.join(' '),
+					proof = message.attachments.first().url || 0
+				check = db.prepare('SELECT stranger_id, past_strangers FROM profile WHERE user_id = ?').get(user.id)
+				rstranger = check.stranger_id || past_strangers[0]
+				if(!reason)
+					return message.channel.send(user + ', you need to provide a reason!')
+				if(!rstranger)
+					return message.channel.send(user + ', no one to report...')
+				db.prepare('INSERT INTO reports (user_id, reason, ts, stranger_id) VALUES (?, ?, DATETIME("now", "localtime"), ?)').run(user.id, reason, rstranger)
+				check = db.prepare('SELECT user_id FROM devs').all()
+				for(const dev of check) {
+					client.users.get(dev.user_id).send(user + ' (' + user.id + ') reported ' + client.users.get(rstranger) + ' (' + rstranger + ') for: ' + reason, proof ? {files: [proof]} : {})
+				}
+				return
+				break
+			case 'blacklist':
+				check = db.prepare('SELECT 1 FROM devs WHERE user_id = ?').get(user.id)
+				if(!check)
+					return
+				let btarget = message.mentions.users.first() || args[0],
+					breason = btarget == args[0] ? args.slice(1).join(' ') : args.join(' ')
+				if(!btarget)
+					return message.channel.send('Invalid command!')
+				if(!breason)
+					return message.channel.send('Please provide a reason!')
+				db.prepare('INSERT INTO blacklist (user_id, reason, ts) VALUES (?, ?, DATETIME("now", "localtime"))').run(btarget, breason)
+				db.prepare('DELETE FROM profile WHERE user_id = ?').run(btarget)
+				check = db.prepare('SELECT user_id FROM profile WHERE stranger_id = ?').get(btarget)
+				if(check)
+					db.prepare('UPDATE profile SET stranger_id = "" WHERE user_id = ?').run(check.user_id)
+				message.channel.send(user + ', user blacklisted and unregistered!')
+				return
+				break
+			case 'time':
+				check = db.prepare('SELECT stranger_ts FROM profile WHERE user_id = ?').get(user.id)
+				if(!check.stranger_ts)
+					return message.channel.send(user + ', you are not paired up with a stranger...')
+				const time = Math.floor(new Date(new Date() - new Date(check.stranger_ts)).getTime() / 1000),
+					hours = Math.floor(time / 3600),
+					mins = Math.floor(time / 60) % 60
+				message.channel.send(user + ', you have been paired with this stranger for: ' + (!hours ? '' : hours + ' hour' + (hours == 1 ? '' : 's') + ' and ') + (mins + ' min' + (mins == 1 ? '' : 's')))
+				return
+				break
 			default:
 				break
 		}
@@ -197,8 +248,8 @@ function doAvailable(message, user) {
 				continue
 			if(blocked_strangers.includes(stranger) || stranger_blocks.includes(user.id))
 				continue
-			db.prepare('UPDATE profile SET available = false, stranger_id = ? WHERE user_id = ?').run(stranger, user.id)
-			db.prepare('UPDATE profile SET available = false, stranger_id = ? WHERE user_id = ?').run(user.id, stranger)
+			db.prepare('UPDATE profile SET available = false, stranger_id = ?, stranger_ts = DATETIME("now", "localtime") WHERE user_id = ?').run(stranger, user.id)
+			db.prepare('UPDATE profile SET available = false, stranger_id = ?, stranger_ts = DATETIME("now", "localtime") WHERE user_id = ?').run(user.id, stranger)
 			message.channel.send('Matched with a stranger, have a nice chat!')
 			client.users.get(stranger).send('Matched with a stranger!')
 			return
