@@ -150,7 +150,7 @@ client.on('message', message => {
 				db.prepare('INSERT INTO reports (user_id, reason, ts, stranger_id) VALUES (?, ?, DATETIME("now", "localtime"), ?)').run(user.id, reason, rstranger)
 				check = db.prepare('SELECT user_id FROM devs').all()
 				for(const dev of check) {
-					client.users.get(dev.user_id).send(user + ' (' + user.id + ') reported ' + client.users.get(rstranger) + ' (' + rstranger + ') for: ' + reason, proof)
+					client.users.get(dev.user_id).send(user + ' (' + user.id + ') reported ' + client.users.get(rstranger) + ' (' + rstranger + ') for:\n' + reason, proof)
 				}
 				return
 				break
@@ -186,9 +186,11 @@ client.on('message', message => {
 				break
 		}
 	}
-	let stranger = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
-	if(message.channel.type === 'dm' && stranger && stranger.stranger_id)
-		client.users.get(stranger.stranger_id).send(message.content)
+	if(message.channel.type === 'dm') {
+		let stranger = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
+		if(stranger && stranger.stranger_id)
+			client.users.get(stranger.stranger_id).send(message.content)
+	}
 })
 
 function getBlockTarget(check, args, list) {
