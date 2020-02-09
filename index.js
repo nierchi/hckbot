@@ -42,7 +42,8 @@ client.on('message', message => {
 				check = db.prepare('SELECT user_id FROM profile WHERE user_id = ?').get(user.id)
 				if(check)
 					return message.channel.send(user + ', you are already registered!')
-				db.prepare('INSERT INTO profile (user_id, user_name, user_desc) VALUES (?, ?, ?)').run(user.id, user.username, 'Just a random person.')
+				let desc = args.join(' ') || 'Just a random person.'
+				db.prepare('INSERT INTO profile (user_id, user_name, user_desc) VALUES (?, ?, ?)').run(user.id, user.username, desc)
 				message.channel.send('Registered!')
 				return
 				break
