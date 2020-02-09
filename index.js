@@ -140,7 +140,7 @@ client.on('message', message => {
 				break
 			case 'report':
 				const reason = args.join(' '),
-					proof = message.attachments.first().url || 0
+					proof = message.attachments.size ? {files: message.attachments.map(x => x.url)} : {}
 				check = db.prepare('SELECT stranger_id, past_strangers FROM profile WHERE user_id = ?').get(user.id)
 				rstranger = check.stranger_id || past_strangers[0]
 				if(!reason)
@@ -150,7 +150,7 @@ client.on('message', message => {
 				db.prepare('INSERT INTO reports (user_id, reason, ts, stranger_id) VALUES (?, ?, DATETIME("now", "localtime"), ?)').run(user.id, reason, rstranger)
 				check = db.prepare('SELECT user_id FROM devs').all()
 				for(const dev of check) {
-					client.users.get(dev.user_id).send(user + ' (' + user.id + ') reported ' + client.users.get(rstranger) + ' (' + rstranger + ') for: ' + reason, proof ? {files: [proof]} : {})
+					client.users.get(dev.user_id).send(user + ' (' + user.id + ') reported ' + client.users.get(rstranger) + ' (' + rstranger + ') for: ' + reason, proof)
 				}
 				return
 				break
