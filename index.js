@@ -182,6 +182,10 @@ client.on('message', message => {
 				message.channel.send(user + ', you have been paired with this stranger for: ' + (!hours ? '' : hours + ' hour' + (hours == 1 ? '' : 's') + ' and ') + (mins + ' min' + (mins == 1 ? '' : 's')))
 				return
 				break
+			case 'help':
+				doHelp(message, user)
+				return
+				break
 			default:
 				break
 		}
@@ -192,6 +196,16 @@ client.on('message', message => {
 			client.users.get(stranger.stranger_id).send(message.content)
 	}
 })
+
+function doHelp(message, user) {
+	const helpEmbed = new Discord.RichEmbed()
+		.setColor('#4D70EF')
+		.setTitle('List of commands')
+		.addField('**Registration**', '**s!register** - Register an account \n**s!unregister** - Unregister / Delete your current account')
+		.addField('**Status**', '\n**s!status** - Check your current availability status \n**s!strangers** - Shows how many strangers are currently available in queue')
+		.addField('**Matching**', '**s!available** - Changes your status to Available (Adds you in queue for matchmaking) \n**s!unavailable** - Changes your status to Unavailable (Unqueue you from the matchmaking) \n**s!next** - Leaves the current conversation and matches you with another stranger \n**s!leave** - Leave the current conversation (automatically unqueues you)\n**s!time** - Shows how long you have been paired with stranger\n**s!block [number]** - Blocks the stranger that you were matched with (not indicating a number will block the current paired stranger, indicating "1" will block the previous stranger)\n**s!unblock [number]** - Unblocks the stranger that you havea blocked (not indicating a number will show how many strangers have been blocked, the number will indicate the stranger\'s position in your blocklist)\n**s!report <reason> [attachment]** - Report the current stranger (indicate the reason and an attachment of your proof or evidence)')
+	message.channel.send(helpEmbed);
+}
 
 function getBlockTarget(check, args, list) {
 	let target = args.length ? false : check.stranger_id,
