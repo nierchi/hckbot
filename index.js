@@ -245,13 +245,13 @@ function doLeave(message, user) {
 
 function doAvailable(message, user) {
 	let check = db.prepare('SELECT available, stranger_id, blocked_strangers FROM profile WHERE user_id = ?').get(user.id)
-	const blocked_strangers = check.blocked_strangers
 	if(!check)
 		return
 	if(check.available)
 		return message.channel.send(user + ', your status is already Available!')
 	if(check.stranger_id)
 		return message.channel.send(user + ', your status cannot be changed to available because you are currently matched with a stranger!')
+	const blocked_strangers = check.blocked_strangers
 	check = db.prepare('SELECT user_id, available, blocked_strangers FROM profile WHERE available = true').all()
 	if(check) {
 		let stranger = ''
