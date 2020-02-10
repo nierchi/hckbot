@@ -176,8 +176,8 @@ client.on('message', message => {
 				return
 				break
 			case 'time':
-				check = db.prepare('SELECT stranger_ts FROM profile WHERE user_id = ?').get(user.id)
-				if(!check.stranger_ts)
+				check = db.prepare('SELECT stranger_id, stranger_ts FROM profile WHERE user_id = ?').get(user.id)
+				if(!check.stranger_ts || !check.stranger_id)
 					return message.channel.send(user + ', you are not paired up with a stranger...')
 				const time = Math.floor(new Date(new Date() - new Date(check.stranger_ts)).getTime() / 1000),
 					hours = Math.floor(time / 3600),
@@ -256,11 +256,11 @@ function doLeave(message, user) {
 		let past_strangers = check.past_strangers.split(sql_arr_sep).filter(Boolean),
 			stranger = check.stranger_id
 		past_strangers = [stranger].concat(past_strangers.length > stranger_history_limit ? past_strangers.slice(0, stranger_history_limit) : past_strangers).join(sql_arr_sep)
-		db.prepare('UPDATE profile SET stranger_id = ?, past_strangers = ? WHERE user_id = ?').run('', past_strangers, user.id)
+		db.prepare('UPDATE profile SET stranger_id = "", stranger_ts = "", past_strangers = ? WHERE user_id = ?').run(past_strangers, user.id)
 		check = db.prepare('SELECT stranger_id, past_strangers FROM profile WHERE user_id = ?').get(stranger)
 		past_strangers = check.past_strangers.split(sql_arr_sep).filter(Boolean)
 		past_strangers = [user.id].concat(past_strangers.length > stranger_history_limit ? past_strangers.slice(0, stranger_history_limit) : past_strangers).join(sql_arr_sep)
-		db.prepare('UPDATE profile SET stranger_id = ?, past_strangers = ? WHERE user_id = ?').run('', past_strangers, stranger)
+		db.prepare('UPDATE profile SET stranger_id = "", stranger_ts = "", past_strangers = ? WHERE user_id = ?').run(past_strangers, stranger)
 		message.channel.send('Left conversation...')
 		client.users.get(stranger).send('Stranger has left the conversation...')
 	}
