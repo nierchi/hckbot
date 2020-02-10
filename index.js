@@ -143,7 +143,9 @@ client.on('message', message => {
 				const reason = args.join(' '),
 					proof = message.attachments.size ? {files: message.attachments.map(x => x.url)} : {}
 				check = db.prepare('SELECT stranger_id, past_strangers FROM profile WHERE user_id = ?').get(user.id)
-				rstranger = check.stranger_id || past_strangers[0]
+				if(!check)
+					return
+				rstranger = check.stranger_id || check.past_strangers[0]
 				if(!reason)
 					return message.channel.send(user + ', you need to provide a reason!')
 				if(!rstranger)
@@ -187,6 +189,20 @@ client.on('message', message => {
 				doHelp(message, user)
 				return
 				break
+			case 'notice':
+				check = db.prepare('SELECT 1 FROM devs WHERE user_id = ?').get(user.id)
+				if(!check)
+					return
+				let notice = args.join(' ')
+				if(!notice)
+					return message.channel.send('Enter a notice!')
+				const nembed = {}
+				nembed.title = 'Announcement'
+				nembed.description = notice
+				check = db.prepare('SELECT user_id FROM profile').all()
+				for(let i of check) {
+					client.users.get(i.user_id).send({embed: nembed})
+				}
 			default:
 				break
 		}
