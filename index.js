@@ -203,6 +203,8 @@ client.on('message', message => {
 				for(let i of check) {
 					client.users.get(i.user_id).send({embed: nembed})
 				}
+				return
+				break
 			case 'invite':
 				message.channel.send('https://discordapp.com/oauth2/authorize?client_id=593364094128488448&permissions=379904&scope=bot')
 				return
