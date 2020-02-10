@@ -203,6 +203,10 @@ client.on('message', message => {
 				for(let i of check) {
 					client.users.get(i.user_id).send({embed: nembed})
 				}
+			case 'invite':
+				message.channel.send('https://discordapp.com/oauth2/authorize?client_id=593364094128488448&permissions=379904&scope=bot')
+				return
+				break
 			default:
 				break
 		}
@@ -283,7 +287,7 @@ function doAvailable(message, user) {
 				continue
 			db.prepare('UPDATE profile SET available = false, stranger_id = ?, stranger_ts = DATETIME("now", "localtime") WHERE user_id = ?').run(stranger, user.id)
 			db.prepare('UPDATE profile SET available = false, stranger_id = ?, stranger_ts = DATETIME("now", "localtime") WHERE user_id = ?').run(user.id, stranger)
-			message.channel.send('Matched with a stranger, have a nice chat!')
+			client.users.get(user.id).send('Matched with a stranger, have a nice chat!')
 			client.users.get(stranger).send('Matched with a stranger!')
 			return
 		}
