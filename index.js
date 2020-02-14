@@ -158,8 +158,7 @@ client.on('message', message => {
 				return
 				break
 			case 'blacklist':
-				check = db.prepare('SELECT 1 FROM devs WHERE user_id = ?').get(user.id)
-				if(!check)
+				if(!checkDev(user))
 					return
 				let btarget = message.mentions.users.first() || args[0],
 					breason = btarget == args[0] ? args.slice(1).join(' ') : args.join(' ')
@@ -190,8 +189,7 @@ client.on('message', message => {
 				return
 				break
 			case 'notice':
-				check = db.prepare('SELECT 1 FROM devs WHERE user_id = ?').get(user.id)
-				if(!check)
+				if(!checkDev(user))
 					return
 				let notice = args.join(' ')
 				if(!notice)
@@ -209,6 +207,24 @@ client.on('message', message => {
 				message.channel.send('https://discordapp.com/oauth2/authorize?client_id=593364094128488448&permissions=379904&scope=bot')
 				return
 				break
+			case 'registered':
+				if(!checkDev(user))
+					return
+				check = db.prepare('SELECT COUNT(*) FROM profile').pluck().get()
+				if(!check)
+					return
+				message.channel.send('`' + check + '`')
+				return
+				break
+			case 'paired':
+				if(!checkDev(user))
+					return
+				check = db.prepare('SELECT COUNT(*) FROM profile WHERE stranger_id != ""').pluck().get()
+				if(!check)
+					return
+				message.channel.send('`' + check + '`')
+				return
+				break
 			default:
 				break
 		}
@@ -219,6 +235,11 @@ client.on('message', message => {
 			client.users.get(stranger.stranger_id).send(message.content)
 	}
 })
+
+function checkDev(user) {
+	let check = db.prepare('SELECT 1 FROM devs WHERE user_id = ?').get(user.id)
+	return !!check
+}
 
 function doHelp(message, user) {
 	const helpEmbed = new Discord.RichEmbed()
