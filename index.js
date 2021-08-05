@@ -219,7 +219,7 @@ client.on('message', message => {
 			case 'paired':
 				if(!checkDev(user))
 					return
-				check = db.prepare('SELECT COUNT(*) FROM profile WHERE stranger_id != ""').pluck().get()
+				check = db.prepare("SELECT COUNT(*) FROM profile WHERE stranger_id != ''").pluck().get()
 				if(!check)
 					return
 				message.channel.send('`' + check + '`')
