@@ -54,7 +54,7 @@ client.on('message', message => {
 				let stranger = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
 				if(stranger && stranger.stranger_id) {
 					db.prepare('UPDATE profile SET stranger_id = ? WHERE user_id = ?').run('', stranger.stranger_id)
-					client.users.get(stranger.stranger_id).send('Stranger left the conversation...')
+					client.users.fetch(stranger.stranger_id).then(user => user.send('Stranger left the conversation...'))
 				}
 				db.prepare('DELETE FROM profile WHERE user_id = ?').run(user.id)
 				message.channel.send('Unregistered...')
@@ -153,7 +153,7 @@ client.on('message', message => {
 				db.prepare('INSERT INTO reports (user_id, reason, ts, stranger_id) VALUES (?, ?, DATETIME("now", "localtime"), ?)').run(user.id, reason, rstranger)
 				check = db.prepare('SELECT user_id FROM devs').all()
 				for(const dev of check) {
-					client.users.get(dev.user_id).send(user + ' (' + user.id + ') reported ' + client.users.get(rstranger) + ' (' + rstranger + ') for:\n' + reason, proof)
+					client.users.fetch(rstranger).then(stranger_user => client.users.fetch(dev.user_id).then(user => user.send(user + ' (' + user.id + ') reported ' + stranger_user + ' (' + rstranger + ') for:\n' + reason, proof)))
 				}
 				return
 				break
@@ -199,7 +199,7 @@ client.on('message', message => {
 				nembed.description = notice
 				check = db.prepare('SELECT user_id FROM profile').all()
 				for(let i of check) {
-					client.users.get(i.user_id).send({embed: nembed})
+					client.users.fetch(i.user_id).then(user => user.send({embed: nembed}))
 				}
 				return
 				break
@@ -232,7 +232,7 @@ client.on('message', message => {
 	if(message.channel.type === 'dm') {
 		let stranger = db.prepare('SELECT stranger_id FROM profile WHERE user_id = ?').get(user.id)
 		if(stranger && stranger.stranger_id)
-			client.users.get(stranger.stranger_id).send(message.content)
+			client.users.fetch(stranger.stranger_id).then(user => user.send(message.content));
 	}
 })
 
@@ -242,7 +242,7 @@ function checkDev(user) {
 }
 
 function doHelp(message, user) {
-	const helpEmbed = new Discord.RichEmbed()
+	const helpEmbed = new Discord.MessageEmbed()
 		.setColor('#4D70EF')
 		.setTitle('List of commands')
 		.addField('**Registration**', '**s!register** - Register an account \n**s!unregister** - Unregister / Delete your current account')
@@ -283,7 +283,7 @@ function doLeave(message, user) {
 		past_strangers = [user.id].concat(past_strangers.length > stranger_history_limit ? past_strangers.slice(0, stranger_history_limit) : past_strangers).join(sql_arr_sep)
 		db.prepare('UPDATE profile SET stranger_id = "", stranger_ts = "", past_strangers = ? WHERE user_id = ?').run(past_strangers, stranger)
 		message.channel.send('Left conversation...')
-		client.users.get(stranger).send('Stranger has left the conversation...')
+		client.users.cache.get(stranger).send('Stranger has left the conversation...')
 	}
 }
 
@@ -310,8 +310,8 @@ function doAvailable(message, user) {
 				continue
 			db.prepare('UPDATE profile SET available = false, stranger_id = ?, stranger_ts = DATETIME("now", "localtime") WHERE user_id = ?').run(stranger, user.id)
 			db.prepare('UPDATE profile SET available = false, stranger_id = ?, stranger_ts = DATETIME("now", "localtime") WHERE user_id = ?').run(user.id, stranger)
-			client.users.get(user.id).send('Matched with a stranger, have a nice chat!')
-			client.users.get(stranger).send('Matched with a stranger!')
+			client.users.fetch(user.id).then(user => user.send('Matched with a stranger, have a nice chat!'))
+			client.users.fetch(stranger).then(user => user.send('Matched with a stranger!'))
 			return
 		}
 	}

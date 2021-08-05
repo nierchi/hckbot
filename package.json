@@ -17,10 +17,11 @@
   },
   "homepage": "https://github.com/nierchi/hckbot#readme",
   "dependencies": {
-    "better-sqlite3": "^5.4.3",
-    "bufferutil": "^4.0.1",
-    "discord.js": "^11.5.1",
-    "node-opus": "^0.3.3",
-    "sodium": "^3.0.2"
+    "better-sqlite3": "^7.4.3",
+    "bufferutil": "^4.0.3",
+    "discord.js": "^12.5.3",
+    "erlpack": "github:discord/erlpack",
+    "utf-8-validate": "^5.0.5",
+    "zlib-sync": "^0.1.7"
   }
 }
